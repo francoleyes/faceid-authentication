@@ -15,7 +15,14 @@ class ResUsers(models.Model):
     def _compute_face_encoding(self):
         for user in self.filtered('image_512'):
             image_data = base64.b64decode(user.image_512)
-            image_np = np.array(Image.open(BytesIO(image_data)).convert('RGB'))
+            image = Image.open(BytesIO(image_data))
+
+            if image.mode in ('RGBA', 'LA') or (image.mode == 'P' and 'transparency' in image.info):
+                image = image.convert('RGBA')
+            else:
+                image = image.convert('RGB')
+
+            image_np = np.array(image)
             encodings = face_recognition.face_encodings(image_np)
             if encodings:
                 user.face_encoding = base64.b64encode(encodings[0].tobytes())
